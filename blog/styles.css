@@ -19,6 +19,7 @@
 
 
     --blue: #89b4fa;
+    --red: #f38ba8;
 
 
 
@@ -206,7 +207,10 @@ code {
 
 .content p {
     margin-bottom: 1rem;
+}
 
+.warning p {
+    color: var(--color_warn);
 }
 
 .content ul, .content ol {
