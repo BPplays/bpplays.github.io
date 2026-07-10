@@ -12,7 +12,8 @@
     --text:    #cdd6f4;
     --text_unimp:    #a6adc8;
     --muted:   var(--text_unimp);
-    --accent:  #f5c2e7;
+    --pink: #f5c2e7;
+    --accent:  var(--pink);
     --radius:  8px;
     --gap:     3px;
 
@@ -25,6 +26,9 @@
     --secondary:     var(--green);
 
     --color_warn:     var(--red);
+
+
+    --link:  var(--pink);
 }
 
 html, body {
@@ -99,7 +103,7 @@ video {
 
 a {
     background: var(--bg);
-    color: var(--blue);
+    color: var(--link);
     font-family: 'Inter', "Noto Sans JP", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
