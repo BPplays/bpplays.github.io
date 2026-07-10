@@ -103,6 +103,12 @@ a {
     font-family: 'Inter', "Noto Sans JP", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
+code {
+    background: var(--surface0);
+    color: var(--text);
+    font-family: 'Inter', "Noto Sans JP", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
 .hero {
     text-align: center;
     padding: 2rem 0;
