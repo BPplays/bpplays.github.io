@@ -209,7 +209,11 @@ code {
     margin-bottom: 1rem;
 }
 
-p.warning {
+/*p.warning {
+    color: var(--color_warn);
+}*/
+
+.warning {
     color: var(--color_warn);
 }
 
