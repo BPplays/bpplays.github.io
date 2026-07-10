@@ -209,7 +209,7 @@ code {
     margin-bottom: 1rem;
 }
 
-.warning p {
+p.warning {
     color: var(--color_warn);
 }
 
