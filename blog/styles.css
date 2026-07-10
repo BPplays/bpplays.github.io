@@ -7,7 +7,8 @@
     --mantle:      #181825;
     --bg:      #1e1e2e;
     --surface: #181818;
-    --border:  #585b70;
+    --surface0: #313244;
+    --border:  var(--surface0);
     --text:    #cdd6f4;
     --text_unimp:    #a6adc8;
     --muted:   var(--text_unimp);
