@@ -104,6 +104,10 @@ a {
 }
 
 code {
+    border-radius: 4px;
+    padding-left: 0.15rem;
+    padding-right: 0.15rem;
+
     background: var(--surface0);
     color: var(--text);
     font-family: 'Inter', "Noto Sans JP", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
