@@ -47,7 +47,7 @@ html, body {
 /* ── Header ─────────────────────────────────────────────── */
 header {
     display: flex; align-items: baseline; gap: 14px;
-    padding: 20px 24px 14px;
+    /* padding: 20px 24px 14px; */
     border-bottom: 1px solid var(--border);
     position: sticky; top: 0;
     background: var(--bg);
@@ -152,13 +152,16 @@ article {
 }
 
 .blog-post {
-    padding: 2rem 0;
+    padding: 0.8rem 0;
 
 }
 
 .blog-post header {
     margin-bottom: 2rem;
-    padding-bottom: 1rem;
+    padding-top: 0.0rem;
+    padding-right: 0.5rem;
+    padding-left: 0.5rem;
+    padding-bottom: 0.5rem;
     border-bottom: 1px solid var(--border);
 
 }
