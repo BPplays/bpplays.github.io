@@ -15,7 +15,7 @@
     --muted:   var(--text_unimp);
     --pink: #f5c2e7;
     --accent:  var(--pink);
-    --radius:  8px;
+    --radius:  0.5rem;
     --gap:     3px;
 
 
