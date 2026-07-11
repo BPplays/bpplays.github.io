@@ -11,6 +11,7 @@
     --border:  var(--surface0);
     --text:    #cdd6f4;
     --text_unimp:    #a6adc8;
+    --text_dark:    var(--bg);
     --muted:   var(--text_unimp);
     --pink: #f5c2e7;
     --accent:  var(--pink);
@@ -209,13 +210,16 @@ code {
     margin-bottom: 1rem;
 }
 
-/*p.warning {
+p.warning {
+    background-color: var(--color_warn);
+    color: var(--text_dark);
+    padding: 0.65rem;
+    border-radius: var(--radius);
+}
+
+/*.warning {
     color: var(--color_warn);
 }*/
-
-.warning {
-    color: var(--color_warn);
-}
 
 .content ul, .content ol {
     margin-bottom: 1rem;
