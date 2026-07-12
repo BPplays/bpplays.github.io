@@ -285,6 +285,33 @@ footer {
     to   { background-position: -200% 0; }
 }
 
+.adaptive-video-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.adaptive-video-wrapper video {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.adaptive-video-wrapper video:not(:first-child) {
+    position: absolute;
+    inset: 0;
+}
+
+.active {
+    opacity: 1;
+    transition: opacity 150ms;
+}
+
+.inactive {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 150ms;
+}
+
 
 
 /* scroll bar */

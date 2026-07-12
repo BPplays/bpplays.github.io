@@ -1,38 +1,116 @@
 const hdrQuery = matchMedia("(dynamic-range: high)");
 
-function updateVideo(video) {
-    const newSrc = hdrQuery.matches
+function desiredSrc(video) {
+    return hdrQuery.matches
         ? video.dataset.hdrSrc
         : video.dataset.sdrSrc;
+}
 
-    // Don't reload if it's already using the correct source.
-    if (video.currentSrc.endsWith(newSrc))
+function cloneVideoAttributes(src, dst) {
+    for (const attr of src.attributes) {
+        if (attr.name.startsWith("data-"))
+            continue;
+
+        dst.setAttribute(attr.name, attr.value);
+    }
+
+    dst.removeAttribute("id");
+}
+
+function initializeVideo(original) {
+    const wrapper = document.createElement("div");
+    wrapper.className = "adaptive-video-wrapper";
+
+    const videoA = document.createElement("video");
+    const videoB = document.createElement("video");
+
+    cloneVideoAttributes(original, videoA);
+    cloneVideoAttributes(original, videoB);
+
+    videoA.classList.add("active");
+    videoB.classList.add("inactive");
+
+    wrapper.style.display = "inline-block";
+    wrapper.style.width = original.style.width || "100%";
+    wrapper.style.maxWidth = original.style.maxWidth || "100%";
+
+    wrapper.append(videoA, videoB);
+
+    original.replaceWith(wrapper);
+
+    const state = {
+        wrapper,
+        videos: [videoA, videoB],
+        active: 0,
+        hdrSrc: original.dataset.hdrSrc,
+        sdrSrc: original.dataset.sdrSrc
+    };
+
+    wrapper._adaptiveVideo = state;
+
+    updateWrapper(state, true);
+}
+
+function updateWrapper(state, firstLoad = false) {
+    const current = state.videos[state.active];
+    const next = state.videos[1 - state.active];
+
+    const newSrc = hdrQuery.matches ? state.hdrSrc : state.sdrSrc;
+
+    if (current.dataset.src === newSrc)
         return;
 
-    const wasPlaying = !video.paused;
-    const time = video.currentTime;
+    const wasPlaying = !current.paused;
+    const time = current.currentTime;
 
-    video.src = newSrc;
-    video.load();
+    next.src = newSrc;
+    next.dataset.src = newSrc;
 
-    video.addEventListener("loadedmetadata", function restore() {
-        video.removeEventListener("loadedmetadata", restore);
+    next.currentTime = 0;
 
-        video.currentTime = Math.min(time, video.duration || time);
+    next.addEventListener("loadedmetadata", function ready() {
+        next.removeEventListener("loadedmetadata", ready);
+
+        next.currentTime = Math.min(time, next.duration || time);
 
         if (wasPlaying)
-            video.play().catch(() => {});
-    });
+            next.play().catch(() => {});
+
+        next.classList.remove("inactive");
+        next.classList.add("active");
+
+        current.classList.remove("active");
+        current.classList.add("inactive");
+
+        current.pause();
+
+        state.active = 1 - state.active;
+    }, { once: true });
+
+    next.load();
+
+    if (firstLoad) {
+        next.play().catch(() => {});
+    }
 }
 
 function updateAllVideos() {
-    document.querySelectorAll("video[data-hdr-src][data-sdr-src]")
-        .forEach(updateVideo);
+    document
+        .querySelectorAll(".adaptive-video-wrapper")
+        .forEach(wrapper => updateWrapper(wrapper._adaptiveVideo));
 }
 
-// Initial load.
-updateAllVideos();
+document
+    .querySelectorAll("video[data-hdr-src][data-sdr-src]")
+    .forEach(initializeVideo);
 
-// When the HDR state changes.
 hdrQuery.addEventListener("change", updateAllVideos);
+
+
+
+
+//TODO: check if this actually works?
+video.addEventListener("loadeddata", () => {
+    video.classList.add("loaded");
+}, { once: true });
 
