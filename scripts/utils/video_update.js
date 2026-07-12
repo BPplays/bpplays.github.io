@@ -1,5 +1,12 @@
 const hdrQuery = matchMedia("(dynamic-range: high)");
 
+let _vidCounter = 0;
+
+function __log(prefix, msg, extra) {
+    if (extra !== undefined) console.log(`[adptv] ${prefix} ${msg}`, extra);
+    else console.log(`[adptv] ${prefix} ${msg}`);
+}
+
 function desiredSrc(video) {
     return hdrQuery.matches
         ? video.dataset.hdrSrc
@@ -21,8 +28,14 @@ function initializeVideo(original) {
     const wrapper = document.createElement("div");
     wrapper.className = "adaptive-video-wrapper";
 
+    const vidId = ++_vidCounter;
+
     const videoA = document.createElement("video");
     const videoB = document.createElement("video");
+    videoA._adbId = `v${vidId}-0`;
+    videoB._adbId = `v${vidId}-1`;
+
+    __log("init", "cloned", { id: vidId, src: original.src });
 
     cloneVideoAttributes(original, videoA);
     cloneVideoAttributes(original, videoB);
@@ -86,6 +99,9 @@ function initializeVideo(original) {
 // }
 
 function waitForFullBuffer(video) {
+    const id = video._adbId || '?';
+    __log("waitFor", "starting", { id, src: video.src });
+
     return new Promise(resolve => {
         let finished = false;
 
@@ -99,18 +115,23 @@ function waitForFullBuffer(video) {
             video.removeEventListener("progress", check);
             video.removeEventListener("loadedmetadata", check);
             video.removeEventListener("canplaythrough", check);
+            video.removeEventListener("error", onError);
 
+            __log("waitFor", "resolved", { id });
             resolve();
+        }
+
+        function onError(err) {
+            __log("waitFor", "ERROR", { id, error: err.message || String(err) });
         }
 
         function check() {
             try {
-
-                console.log("dur:", video.duration);
-                console.log("buf len:", video.buffered.length);
+                console.log(`[${id}] dur:`, video.duration);
+                console.log(`[${id}] buf len:`, video.buffered.length);
 
                 const end = video.buffered.end(video.buffered.length - 1);
-                console.log("buf end:", end);
+                console.log(`[${id}] buf end:`, end);
                 if (
                     !Number.isNaN(video.duration) &&
                     video.duration > 0 &&
@@ -124,14 +145,14 @@ function waitForFullBuffer(video) {
             }
         }
         function logcheck() {
-            console.log("logged")
             check()
         }
 
         // Fast path: fire immediately when events occur.
-        video.addEventListener("progress", check);
-        video.addEventListener("loadedmetadata", check);
-        video.addEventListener("canplaythrough", check);
+        video.addEventListener("progress", check, false);
+        video.addEventListener("loadedmetadata", check, false);
+        video.addEventListener("canplaythrough", check, false);
+        video.addEventListener("error", onError, false);
 
         // Fallback: Firefox may stop firing progress events.
         const interval = setInterval(logcheck, 100);
@@ -149,9 +170,14 @@ function updateWrapper(state, firstLoad = false) {
     next.classList.remove("loaded");
 
     const newSrc = hdrQuery.matches ? state.hdrSrc : state.sdrSrc;
+    const nxtId = next._adbId || '?';
 
-    if (current.dataset.src === newSrc)
+    __log("update", "src set", { nxt: nxtId, src: newSrc });
+
+    if (current.dataset.src === newSrc) {
+        __log("update", "skipping — already at target src");
         return;
+    }
 
     const wasPlaying = !current.paused;
     const time = current.currentTime;
@@ -160,13 +186,19 @@ function updateWrapper(state, firstLoad = false) {
     next.dataset.src = newSrc;
     next.load();
 
+    __log("update", "load() called", { nxt: nxtId });
+
     next.currentTime = 0;
 
     waitForFullBuffer(next).then(() => {
         next.currentTime = Math.min(time, next.duration || time);
 
-        if (wasPlaying)
-            next.play().catch(() => {});
+        if (wasPlaying) {
+            const p = next.play();
+            if (p && typeof p.then === 'function') {
+                p.catch(e => __log("play", "error", { nxt: nxtId, msg: e?.message }))
+            };
+        }
 
         next.classList.remove("inactive");
         next.classList.add("active");
@@ -179,9 +211,9 @@ function updateWrapper(state, firstLoad = false) {
         state.active = 1 - state.active;
     });
 
-
-    if (firstLoad && next?.classList.contains("autoplay")) {
-        next.play().catch(() => {});
+    if (firstLoad && next.classList.contains("autoplay")) {
+        const p = next.play();
+        if (p && typeof p.then === 'function') p.catch(e => __log("play-firstload", "error", { nxt: nxtId, msg: e?.message }));
     }
 
     next.classList.add("loaded");
