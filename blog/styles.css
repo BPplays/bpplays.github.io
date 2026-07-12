@@ -254,6 +254,10 @@ footer {
 }
 
 .adaptive-video {
+
+    text-align: center;
+    justify-content: center;
+
     display: block;
     width: 100%;
     aspect-ratio: var(--aspect-ratio);
