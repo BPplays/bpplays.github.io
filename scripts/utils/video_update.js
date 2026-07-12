@@ -68,8 +68,8 @@ function updateWrapper(state, firstLoad = false) {
 
     next.currentTime = 0;
 
-    next.addEventListener("loadedmetadata", function ready() {
-        next.removeEventListener("loadedmetadata", ready);
+    next.addEventListener("canplaythrough", function ready() {
+        next.removeEventListener("canplaythrough", ready);
 
         next.currentTime = Math.min(time, next.duration || time);
 
