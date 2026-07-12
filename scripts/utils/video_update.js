@@ -54,13 +54,24 @@ function initializeVideo(original) {
 function waitForFullBuffer(video) {
     return new Promise(resolve => {
         function check() {
-            if (
-                video.duration &&
-                video.buffered.length &&
-                video.buffered.end(video.buffered.length - 1) >= video.duration
-            ) {
-                video.removeEventListener("progress", check);
-                resolve();
+            try {
+                console.log("dur:", video.duration);
+                console.log("buf len:", video.buffered.length);
+
+                const end = video.buffered.end(video.buffered.length - 1);
+                console.log("buf end:", end);
+
+                if (
+                    !Number.isNaN(video.duration) &&
+                    video.duration > 0 &&
+                    end >= video.duration
+                ) {
+                    video.removeEventListener("progress", check);
+                    video.removeEventListener("loadedmetadata", check);
+                    resolve();
+                }
+            } catch {
+                // Ignore until metadata/buffer information is available.
             }
         }
 
@@ -73,6 +84,9 @@ function waitForFullBuffer(video) {
 function updateWrapper(state, firstLoad = false) {
     const current = state.videos[state.active];
     const next = state.videos[1 - state.active];
+
+    current.classList.remove("loaded");
+    next.classList.remove("loaded");
 
     const newSrc = hdrQuery.matches ? state.hdrSrc : state.sdrSrc;
 
@@ -109,6 +123,8 @@ function updateWrapper(state, firstLoad = false) {
     if (firstLoad && next?.classList.contains("autoplay")) {
         next.play().catch(() => {});
     }
+
+    next.classList.add("loaded");
 }
 
 function updateAllVideos() {
