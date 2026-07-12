@@ -209,6 +209,8 @@ function updateWrapper(state, firstLoad = false) {
         current.pause();
 
         state.active = 1 - state.active;
+
+        next.classList.add("loaded");
     });
 
     if (firstLoad && next.classList.contains("autoplay")) {
@@ -216,7 +218,6 @@ function updateWrapper(state, firstLoad = false) {
         if (p && typeof p.then === 'function') p.catch(e => __log("play-firstload", "error", { nxt: nxtId, msg: e?.message }));
     }
 
-    next.classList.add("loaded");
 }
 
 function updateAllVideos() {
