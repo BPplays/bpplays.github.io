@@ -51,6 +51,25 @@ function initializeVideo(original) {
     updateWrapper(state, true);
 }
 
+function waitForFullBuffer(video) {
+    return new Promise(resolve => {
+        function check() {
+            if (
+                video.duration &&
+                video.buffered.length &&
+                video.buffered.end(video.buffered.length - 1) >= video.duration
+            ) {
+                video.removeEventListener("progress", check);
+                resolve();
+            }
+        }
+
+        video.addEventListener("progress", check);
+        video.addEventListener("loadedmetadata", check);
+        check();
+    });
+}
+
 function updateWrapper(state, firstLoad = false) {
     const current = state.videos[state.active];
     const next = state.videos[1 - state.active];
@@ -65,17 +84,15 @@ function updateWrapper(state, firstLoad = false) {
 
     next.src = newSrc;
     next.dataset.src = newSrc;
+    next.load();
 
     next.currentTime = 0;
 
-    next.addEventListener("canplaythrough", function ready() {
-        next.removeEventListener("canplaythrough", ready);
-
+    waitForFullBuffer(next).then(() => {
         next.currentTime = Math.min(time, next.duration || time);
 
-        if (wasPlaying) {
+        if (wasPlaying)
             next.play().catch(() => {});
-        }
 
         next.classList.remove("inactive");
         next.classList.add("active");
@@ -86,9 +103,8 @@ function updateWrapper(state, firstLoad = false) {
         current.pause();
 
         state.active = 1 - state.active;
-    }, { once: true });
+    });
 
-    next.load();
 
     if (firstLoad && next?.classList.contains("autoplay")) {
         next.play().catch(() => {});
