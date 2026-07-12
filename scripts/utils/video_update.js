@@ -73,8 +73,9 @@ function updateWrapper(state, firstLoad = false) {
 
         next.currentTime = Math.min(time, next.duration || time);
 
-        if (wasPlaying)
+        if (wasPlaying) {
             next.play().catch(() => {});
+        }
 
         next.classList.remove("inactive");
         next.classList.add("active");
@@ -89,7 +90,7 @@ function updateWrapper(state, firstLoad = false) {
 
     next.load();
 
-    if (firstLoad) {
+    if (firstLoad && next?.classList.contains("autoplay")) {
         next.play().catch(() => {});
     }
 }
