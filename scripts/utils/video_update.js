@@ -127,7 +127,7 @@ hdrQuery.addEventListener("change", updateAllVideos);
 
 
 //TODO: check if this actually works?
-video.addEventListener("loadeddata", () => {
-    video.classList.add("loaded");
-}, { once: true });
+//video.addEventListener("loadeddata", () => {
+//    video.classList.add("loaded");
+//}, { once: true });
 
