@@ -51,32 +51,92 @@ function initializeVideo(original) {
     updateWrapper(state, true);
 }
 
+// function waitForFullBuffer(video) {
+//     return new Promise(resolve => {
+//         function check() {
+//             try {
+//                 console.log("dur:", video.duration);
+//                 console.log("buf len:", video.buffered.length);
+//
+//                 const end = video.buffered.end(video.buffered.length - 1);
+//                 console.log("buf end:", end);
+//
+//                 if (
+//                     !Number.isNaN(video.duration) &&
+//                     video.duration > 0 &&
+//                     end >= video.duration
+//                 ) {
+//                     video.removeEventListener("progress", check);
+//                     video.removeEventListener("loadedmetadata", check);
+//                     resolve();
+//                 }
+//             } catch {
+//                 // Ignore until metadata/buffer information is available.
+//             }
+//         }
+//
+//         video.addEventListener("progress", check, false);
+//         video.addEventListener("loadedmetadata", check, false);
+//         const timer = setTimeout(() => {    // fallback — resolves even if Firefox
+//             video.removeEventListener('progress', check, false);      // stalls (which it does for cloned videos)
+//             resolve();
+//         }, 5000);
+//         check();
+//     });
+// }
+
 function waitForFullBuffer(video) {
     return new Promise(resolve => {
+        let finished = false;
+
+        function done() {
+            if (finished)
+                return;
+
+            finished = true;
+
+            clearInterval(interval);
+            video.removeEventListener("progress", check);
+            video.removeEventListener("loadedmetadata", check);
+            video.removeEventListener("canplaythrough", check);
+
+            resolve();
+        }
+
         function check() {
             try {
+
                 console.log("dur:", video.duration);
                 console.log("buf len:", video.buffered.length);
 
                 const end = video.buffered.end(video.buffered.length - 1);
                 console.log("buf end:", end);
-
                 if (
                     !Number.isNaN(video.duration) &&
                     video.duration > 0 &&
+                    video.buffered.length &&
                     end >= video.duration
                 ) {
-                    video.removeEventListener("progress", check);
-                    video.removeEventListener("loadedmetadata", check);
-                    resolve();
+                    done();
                 }
             } catch {
-                // Ignore until metadata/buffer information is available.
+                // Metadata/buffer not ready yet.
             }
         }
+        function logcheck() {
+            console.log("logged")
+            check()
+        }
 
+        // Fast path: fire immediately when events occur.
         video.addEventListener("progress", check);
         video.addEventListener("loadedmetadata", check);
+        video.addEventListener("canplaythrough", check);
+
+        // Fallback: Firefox may stop firing progress events.
+        const interval = setInterval(logcheck, 100);
+
+        // Initial check in case it's already buffered.
         check();
     });
 }
