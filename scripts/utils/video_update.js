@@ -56,7 +56,8 @@ function initializeVideo(original) {
         videos: [videoA, videoB],
         active: 0,
         hdrSrc: original.dataset.hdrSrc,
-        sdrSrc: original.dataset.sdrSrc
+        sdrSrc: original.dataset.sdrSrc,
+        _nxtGen: 0,
     };
 
     wrapper._adaptiveVideo = state;
@@ -98,71 +99,70 @@ function initializeVideo(original) {
 //     });
 // }
 
-function waitForFullBuffer(video) {
+function waitForFullBuffer(video, stateRef, captureGen) {
     const id = video._adbId || '?';
-    __log("waitFor", "starting", { id, src: video.src });
+    __log("waitFor", "starting", { id });
 
-    return new Promise(resolve => {
-        let finished = false;
+    return Promise.race([
+        new Promise(resolve => {
+            let finished = false;
 
-        function done() {
-            if (finished)
-                return;
+            function done() {
+                if (finished)
+                    return;
 
-            finished = true;
+                finished = true;
 
-            clearInterval(interval);
-            video.removeEventListener("progress", check);
-            video.removeEventListener("loadedmetadata", check);
-            video.removeEventListener("canplaythrough", check);
-            video.removeEventListener("error", onError);
+                clearInterval(interval);
+                video.removeEventListener("progress", check);
+                video.removeEventListener("loadedmetadata", check);
+                video.removeEventListener("canplaythrough", check);
+                video.removeEventListener("error", onError);
 
-            __log("waitFor", "resolved", { id });
-            resolve();
-        }
-
-        function onError(err) {
-            __log("waitFor", "ERROR", { id, error: err.message || String(err) });
-        }
-
-        function check() {
-            try {
-                console.log(`[${id}] dur:`, video.duration);
-                console.log(`[${id}] buf len:`, video.buffered.length);
-
-                const end = video.buffered.end(video.buffered.length - 1);
-                console.log(`[${id}] buf end:`, end);
-                if (
-                    !Number.isNaN(video.duration) &&
-                    video.duration > 0 &&
-                    video.buffered.length &&
-                    end >= video.duration
-                ) {
-                    done();
-                }
-            } catch {
-                // Metadata/buffer not ready yet.
+                __log("waitFor", "resolved", { id });
+                resolve();
             }
-        }
-        function logcheck() {
-            check()
-        }
 
-        // Fast path: fire immediately when events occur.
-        video.addEventListener("progress", check, false);
-        video.addEventListener("loadedmetadata", check, false);
-        video.addEventListener("canplaythrough", check, false);
-        video.addEventListener("error", onError, false);
+            function onError(err) {
+                // error fires but we keep polling — the fallback interval is what matters
+            }
 
-        // Fallback: Firefox may stop firing progress events.
-        const interval = setInterval(logcheck, 100);
+            function check() {
+                // If a newer swap call has superseded this one, silently drop all events.
+                if (stateRef._nxtGen !== captureGen)
+                    return;
 
-        // Initial check in case it's already buffered.
-        check();
-    });
+                try {
+                    const dur = video.duration;
+                    if (!Number.isNaN(dur) && dur > 0 && video.buffered.length) {
+                        const end = video.buffered.end(video.buffered.length - 1);
+                        if (end >= dur)
+                            done();
+                    }
+                } catch {
+                    // Metadata/buffer not ready yet.
+                }
+            }
+
+            // Fast path: fire immediately when events occur.
+            video.addEventListener("progress", check, false);
+            video.addEventListener("loadedmetadata", check, false);
+            video.addEventListener("canplaythrough", check, false);
+            video.addEventListener("error", onError, false);
+
+            // Fallback: Firefox may stop firing progress events.
+            const interval = setInterval(check, 100);
+
+            // Initial check in case it's already buffered.
+            check();
+        }),
+        new Promise(resolve => setTimeout(resolve, 8000))   // hard timeout — don't hang indefinitely
+    ]);
 }
 
 function updateWrapper(state, firstLoad = false) {
+    const myGen = ++state._nxtGen;          // capture generation for THIS call
+    
     const current = state.videos[state.active];
     const next = state.videos[1 - state.active];
 
@@ -190,7 +190,10 @@ function updateWrapper(state, firstLoad = false) {
 
     next.currentTime = 0;
 
-    waitForFullBuffer(next).then(() => {
+    waitForFullBuffer(next, state, myGen).then(() => {
+        // Bail out if a newer swap call has superseded this one.
+        if (state._nxtGen !== myGen) return;
+
         next.currentTime = Math.min(time, next.duration || time);
 
         if (wasPlaying) {
@@ -208,7 +211,8 @@ function updateWrapper(state, firstLoad = false) {
 
         current.pause();
 
-        state.active = 1 - state.active;
+        // Set concrete index instead of toggling — prevents double-flip desync.
+        state.active = state.videos.indexOf(next);
 
         next.classList.add("loaded");
     });
