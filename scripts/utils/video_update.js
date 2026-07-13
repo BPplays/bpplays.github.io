@@ -128,7 +128,7 @@ function waitForFullBuffer(video, stateRef, captureGen) {
             }
 
             function check() {
-                const EPSILON_SECONDS = 0.05;   // 50 ms — Firefox's mp4 codec under-reports the buffered tail by a handful of microseconds vs video.duration
+                const EPSILON_SECONDS = 0.001;   // Firefox's mp4 codec under-reports the buffered tail by a handful of microseconds vs video.duration
 
                 try {
                     const dur = video.duration;
