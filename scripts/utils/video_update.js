@@ -156,13 +156,12 @@ function waitForFullBuffer(video, stateRef, captureGen) {
             // Initial check in case it's already buffered.
             check();
         }),
-        new Promise(resolve => setTimeout(resolve, 8000))   // hard timeout — don't hang indefinitely
     ]);
 }
 
 function updateWrapper(state, firstLoad = false) {
     const myGen = ++state._nxtGen;          // capture generation for THIS call
-    
+
     const current = state.videos[state.active];
     const next = state.videos[1 - state.active];
 
