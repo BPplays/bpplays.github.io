@@ -134,8 +134,12 @@ function waitForFullBuffer(video, stateRef, captureGen) {
 
                 try {
                     const dur = video.duration;
+
+                    console.log(`[${id}] dur:`, video.duration);
+                    console.log(`[${id}] buf len:`, video.buffered.length);
+                    const end = video.buffered.end(video.buffered.length - 1);
+                    console.log(`[${id}] buf end:`, end);
                     if (!Number.isNaN(dur) && dur > 0 && video.buffered.length) {
-                        const end = video.buffered.end(video.buffered.length - 1);
                         if (end >= dur)
                             done();
                     }
