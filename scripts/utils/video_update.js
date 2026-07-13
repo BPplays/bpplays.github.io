@@ -128,6 +128,7 @@ function waitForFullBuffer(video, stateRef, captureGen) {
             }
 
             function check() {
+                // this may cause issues if a video is at or above 1000 fps?
                 const EPSILON_SECONDS = 0.001;   // Firefox's mp4 codec under-reports the buffered tail by a handful of microseconds vs video.duration
 
                 try {
