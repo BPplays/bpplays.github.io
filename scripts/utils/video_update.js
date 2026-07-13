@@ -128,24 +128,24 @@ function waitForFullBuffer(video, stateRef, captureGen) {
             }
 
             function check() {
-                // If a newer swap call has superseded this one, silently drop all events.
-                if (stateRef._nxtGen !== captureGen)
-                    return;
+                const EPSILON_SECONDS = 0.05;   // 50 ms — Firefox's mp4 codec under-reports the buffered tail by a handful of microseconds vs video.duration
 
                 try {
                     const dur = video.duration;
+                    const end = video.buffered.end(video.buffered.length - 1);
 
                     console.log(`[${id}] dur:`, video.duration);
                     console.log(`[${id}] buf len:`, video.buffered.length);
-                    const end = video.buffered.end(video.buffered.length - 1);
                     console.log(`[${id}] buf end:`, end);
-                    if (!Number.isNaN(dur) && dur > 0 && video.buffered.length) {
-                        if (end >= dur)
-                            done();
+
+                    if (!Number.isNaN(dur) && dur > 1 && video.buffered.length) {
+                        if ((dur - end) <= EPSILON_SECONDS)
+                            done();      // bufEnd may undershoot by a few ms in Firefox but the content is fully buffered once we're inside that margin.
                     }
                 } catch {
                     // Metadata/buffer not ready yet.
                 }
+
             }
 
             // Fast path: fire immediately when events occur.
@@ -155,7 +155,7 @@ function waitForFullBuffer(video, stateRef, captureGen) {
             video.addEventListener("error", onError, false);
 
             // Fallback: Firefox may stop firing progress events.
-            const interval = setInterval(check, 100);
+            const interval = setInterval(check, 250);
 
             // Initial check in case it's already buffered.
             check();
